@@ -1,9 +1,8 @@
 import time
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from api import get_filtered_pairs, get_balance, make_request
+from api import get_filtered_pairs, get_balance, make_request, get_historical_data
 from strategy import calculate_trade_levels
-from api import get_historical_data
 
 # Configurazione del logging
 logging.basicConfig(filename="trading_log.txt", level=logging.INFO, format="%(asctime)s - %(message)s")
@@ -13,6 +12,23 @@ MAX_OPEN_TRADES = 10  # Limite massimo di trade aperti contemporaneamente
 SCAN_INTERVAL = 60  # Intervallo tra le scansioni in secondi (es. ogni 60 sec)
 
 open_trades = {}  # Dizionario per tracciare gli ordini attivi
+
+from api import make_request
+
+def get_open_trades():
+    """Ottiene le posizioni aperte per determinare se possiamo aprire nuovi trade."""
+    endpoint = "/v5/position/list"
+    params = {"category": "linear"}  # ✅ Assicurati che la categoria sia impostata correttamente
+    response = make_request(endpoint, params)
+
+    if response and "result" in response and "list" in response["result"]:
+        positions = response["result"]["list"]
+        open_trades = [pos["symbol"] for pos in positions if float(pos["size"]) > 0]
+        print(f"📌 Posizioni aperte: {open_trades}")
+        return open_trades
+
+    print("⚠️ Nessuna posizione aperta trovata o errore nella richiesta API.")
+    return []
 
 def place_order(symbol, side, qty, entry_price):
     """
@@ -77,9 +93,11 @@ def scan_and_trade(symbol):
     Scansiona una singola coppia e apre un trade se soddisfa i criteri.
     """
     print(f"📡 Analizzando {symbol}...")
-    
-    if len(open_trades) >= MAX_OPEN_TRADES:
-        print(f"⚠️ Raggiunto il limite di {MAX_OPEN_TRADES} trade aperti, skipping...")
+
+    # Controlla quanti trade sono aperti prima di procedere
+    current_open_trades = get_open_trades()
+    if current_open_trades >= MAX_OPEN_TRADES:
+        print(f"⚠️ Limite massimo di {MAX_OPEN_TRADES} trade aperti raggiunto, skipping {symbol}...")
         return
 
     df = get_historical_data(symbol)
