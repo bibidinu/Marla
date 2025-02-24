@@ -1,0 +1,4 @@
+📡 Caricamento del dataset per l'addestramento...
+🔎 Colonne disponibili nel dataset: ['open_time', 'open', 'high', 'low', 'close', 'volume', 'turnover', 'RSI', 'ATR', 'MACD', 'MACD_Signal', 'BB_Upper', 'BB_Lower', 'VWAP', 'ADX', 'SuperTrend']
+❌ Errore: Le seguenti feature mancano nel dataset: ['EMA_50', 'EMA_200', 'trend']
+Assicurati di aver eseguito ai_data.py con la strategia aggiornata.
